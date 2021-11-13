@@ -25,6 +25,8 @@ names(dat) <- c("x", "y")
 dat_sf <- st_as_sf(dat, coords = c("x", "y"))
 p <- st_polygon(list(matrix(c(0,0,100,100,0, 0,100,100,0,0), ncol = 2)))
 
+saveRDS(p, "./dat/plot_poly.rds")
+
 # Increase from evenness towards complete spatial randomness
 
 # Number of replicates
