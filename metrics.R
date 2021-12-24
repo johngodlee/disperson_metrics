@@ -127,6 +127,18 @@ metric_gen <- function(dat_polys, dat_points) {
   return(metrics_df)
 }
 
-even_csr_metrics <- metric_gen(dat_even_csr_polys, dat_even_csr_points)
-csr_clust_metrics <- metric_gen(dat_csr_clust_polys, dat_csr_clust_points)
+# Subset original data to make it easier to manage
+##' Original: 100 replicates, 401 movements = 40100
+##' Subset: 20 replicates, 101 movements (every 4th) = 2020
+even_csr_move_vec <- seq(from = 1, to = length(dat_even_csr_polys[[1]]), by = 4)
+dat_even_csr_polys_sub <- lapply(dat_even_csr_polys[1:20], "[", even_csr_move_vec)
+dat_even_csr_points_sub <- lapply(dat_even_csr_points[1:20], "[", even_csr_move_vec)
+
+csr_clust_move_vec <- seq(from = 1, to = length(dat_csr_clust_polys[[1]]), by = 4)
+dat_csr_clust_polys_sub <- lapply(dat_csr_clust_polys[1:20], "[", csr_clust_move_vec)
+dat_csr_clust_points_sub <- lapply(dat_csr_clust_points[1:20], "[", csr_clust_move_vec)
+
+# Run functions
+even_csr_metrics <- metric_gen(dat_even_csr_polys_sub, dat_even_csr_points_sub)
+csr_clust_metrics <- metric_gen(dat_csr_clust_polys_sub, dat_csr_clust_points_sub)
 

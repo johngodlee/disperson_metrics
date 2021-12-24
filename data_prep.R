@@ -6,7 +6,7 @@
 library(dplyr)
 
 # Import data
-s <- read.csv("dat/bicuar_stems.csv")
+s <- read.csv("./dat/bicuar_stems.csv")
 
 scale01 <- function(x){(x-min(x))/(max(x)-min(x))}
 
