@@ -6,70 +6,74 @@
 library(ggplot2)
 library(sf)
 library(scico)
-library(mclapply)
+library(parallel)
 
 # Even-ness to CSR 
 ## Import data
-dat_even_csr_points_list <- readRDS("dat/dat_even_csr_points.rds")
-dat_even_csr_polys_list <- readRDS("dat/dat_even_csr_polys.rds")
+even_csr_points <- readRDS("dat/even_csr_points.rds")
+even_csr_polys <- readRDS("dat/even_csr_polys.rds")
 
 ## Isolate one example plot
-dat_even_csr_polys <- dat_even_csr_polys_list[[1]]
-dat_even_csr_points <- dat_even_csr_points_list[[1]]
+even_csr_polys_fil <- even_csr_polys[[1]]
+even_csr_points_fil <- even_csr_points[[1]]
 
 ## Calculate areas
-dat_even_csr_polys <- lapply(dat_even_csr_polys, function(x) {
-  x$area <- st_area(x)
-  return(x) 
+even_csr_polys_fil_sf <- lapply(seq_along(even_csr_polys_fil), function(x) {
+  polys_sf <- st_sf(st_sfc(lapply(even_csr_polys_fil[[x]], function(y) { 
+    st_polygon(list(rbind(y, y[1,])))
+  })))
+  polys_sf$cell_area <- st_area(polys_sf)
+  return(polys_sf)
 })
 
-col_range <- range(unlist(lapply(dat_even_csr_polys, "[[", "area")))
+col_range <- range(unlist(lapply(even_csr_polys_fil_sf, "[[", "cell_area")))
 
 ## Create all plots
-mclapply(seq_along(dat_even_csr_polys), function(x) {
-  png(file = file.path("frames", "even_csr", 
-      paste0(sprintf("%03d", x), "_even_csr", ".png")), 
-    width = 500, height = 500)
-    print(ggplot() + 
-      geom_sf(data = dat_even_csr_polys[[x]], aes(fill = area), 
+lapply(seq_along(even_csr_polys_fil_sf), function(x) {
+    out <- ggplot() + 
+      geom_sf(data = even_csr_polys_fil_sf[[x]], aes(fill = cell_area), 
         colour = "black") + 
       scale_fill_scico(palette = "bamako", limits = col_range) + 
-      geom_sf(data = dat_even_csr_points[[x]], colour = "black") +
+      geom_point(data = even_csr_points_fil[[x]], aes(x = x, y = y), 
+        colour = "black") +
       theme_void() + 
-      theme(legend.position = "none"))
-  dev.off()
-}, mc.cores = 4)
+      theme(legend.position = "none")
+    ggsave(out, width = 5, height = 5, 
+      file = file.path("frames", "even_csr", 
+        paste0(sprintf("%03d", x), "_even_csr", ".png")))
+})
 
 # CSR to clustered
 ## Import data
-dat_csr_clust_points_list <- readRDS("dat/dat_csr_clust_points.rds")
-dat_csr_clust_polys_list <- readRDS("dat/dat_csr_clust_polys.rds")
+csr_clust_points <- readRDS("dat/csr_clust_points.rds")
+csr_clust_polys <- readRDS("dat/csr_clust_polys.rds")
 
 ## Isolate one example plot
-dat_csr_clust_polys <- dat_csr_clust_polys_list[[1]]
-dat_csr_clust_points <- dat_csr_clust_points_list[[1]]
+csr_clust_polys_fil <- csr_clust_polys[[1]]
+csr_clust_points_fil <- csr_clust_points[[1]]
 
 ## Calculate areas
-dat_csr_clust_polys <- lapply(dat_csr_clust_polys, function(x) {
-  x$area <- st_area(x)
-  return(x) 
+csr_clust_polys_fil_sf <- lapply(seq_along(csr_clust_polys_fil), function(x) {
+  polys_sf <- st_sf(st_sfc(lapply(csr_clust_polys_fil[[x]], function(y) { 
+    st_polygon(list(rbind(y, y[1,])))
+  })))
+  polys_sf$cell_area <- st_area(polys_sf)
+  return(polys_sf)
 })
 
-col_range <- range(unlist(lapply(dat_csr_clust_polys, "[[", "area")))
+col_range <- range(unlist(lapply(csr_clust_polys_fil_sf, "[[", "cell_area")))
 
 ## Create all plots
-mclapply(seq_along(dat_csr_clust_polys), function(x) {
-  png(file = file.path("frames", "csr_clust", 
-      paste0(sprintf("%03d", x), "_csr_clust", ".png")), 
-    width = 500, height = 500)
-    print(ggplot() + 
-      geom_sf(data = dat_csr_clust_polys[[x]], aes(fill = area), 
+lapply(seq_along(csr_clust_polys_fil_sf), function(x) {
+    out <- ggplot() + 
+      geom_sf(data = csr_clust_polys_fil_sf[[x]], aes(fill = cell_area), 
         colour = "black") + 
       scale_fill_scico(palette = "bamako", limits = col_range) + 
-      geom_sf(data = dat_csr_clust_points[[x]], colour = "black") +
+      geom_point(data = csr_clust_points_fil[[x]], aes(x = x, y = y), 
+        colour = "black") +
       theme_void() + 
-      theme(legend.position = "none"))
-  dev.off()
-}, mc.cores = 4)
-
-
+      theme(legend.position = "none")
+    ggsave(out, width = 5, height = 5, 
+      file = file.path("frames", "csr_clust", 
+        paste0(sprintf("%03d", x), "_csr_clust", ".png")))
+})

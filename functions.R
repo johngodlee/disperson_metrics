@@ -2,20 +2,18 @@ mytheme <- function() {
   theme_bw() + 
   theme(
     strip.background = element_rect(fill = NA),
-    axis.text = element_text(size = 12),
-    axis.title = element_text(size = 12),
-    strip.text = element_text(size = 12),
-    legend.text = element_text(size = 12),
+    axis.text = element_text(size = 10),
+    axis.title = element_text(size = 10),
+    strip.text = element_text(size = 10),
+    legend.text = element_text(size = 10),
   )
 }
 
 minBox <- function(x) {
-  x_mat <- st_coordinates(x)[,1:2]
-  
   ## rotating calipers algorithm using the convex hull
-  H <- chull(x_mat)  ## hull indices, vertices ordered clockwise
+  H <- chull(x)  ## hull indices, vertices ordered clockwise
   n <- length(H)  ## number of hull vertices
-  hull <- x_mat[H, ]  ## hull vertices
+  hull <- x[H, ]  ## hull vertices
   
   ## unit basis vectors for all subspaces spanned by the hull edges
   hDir <- diff(rbind(hull, hull[1,]))  ## hull vertices are circular

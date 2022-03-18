@@ -4,26 +4,33 @@
 
 # Packages
 library(dplyr)
+library(parallel)
+library(RANN)
+library(deldir)
 
 # Import data
 s <- read.csv("./dat/bicuar_stems.csv")
 
-scale01 <- function(x){(x-min(x))/(max(x)-min(x))}
-
-s_clean <- s %>%
-  filter(plot %in% 1:5) %>%
-  group_by(plot, dec_longitude, dec_latitude) %>%
-  slice(1) %>%
-  group_by(plot) %>%
-  mutate(
-    tree_id = row_number(),
-    dec_longitude = scale01(dec_longitude) * 100,
-    dec_latitude = scale01(dec_latitude) * 100) %>% 
-  dplyr::select(
-    plot_id = plot, 
-    tree_id, 
-    x_grid = dec_longitude,
-    y_grid = dec_latitude)
+s_points <- s %>%
+  group_by(plot_id, x_grid, y_grid) %>%
+  summarise() %>% 
+  filter(
+    !is.na(x_grid), x_grid <= 100, x_grid >= 0,
+    !is.na(y_grid), y_grid <= 100, y_grid >= 0) %>%
+  rename(x = x_grid, y = y_grid) %>% 
+  group_by(plot_id) %>%
+  as.data.frame() %>% 
+  split(., .$plot_id) %>% 
+  lapply(., "[", c("x", "y"))
   
-write.csv(s_clean, "dat/trees.csv")
+saveRDS(s_points, "dat/bicuar_points.rds")
 
+s_polys <-  lapply(s_points, function(x) {
+  vor <- deldir(x, rw = c(0,100,0,100))
+  vor_tiles <- tile.list(vor)
+  lapply(vor_tiles, function(z) {
+    cbind(z$x, z$y)
+  })
+})
+
+saveRDS(s_polys, "dat/bicuar_polys.rds")

@@ -1,7 +1,5 @@
-convert -delay 10 -loop 0 frames/even_csr/*_even_csr.png -scale 500x500 img/even_csr.gif
+#!/usr/bin/env sh
 
-convert img/even_csr.gif -coalesce +dither -colors 64 -layers optimize img/even_csr_small.gif
+ffmpeg -framerate 6 -i frames/even_csr/%03d_even_csr.png -y vid/even_csr.mp4
 
-convert -delay 10 -loop 0 frames/csr_clust/*_csr_clust.png -scale 500x500 img/csr_clust.gif
-
-convert img/csr_clust.gif -coalesce +dither -colors 64 -layers optimize img/csr_clust_small.gif
+ffmpeg -framerate 6 -i frames/csr_clust/%03d_csr_clust.png -y vid/csr_clust.mp4
