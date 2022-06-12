@@ -11,6 +11,7 @@ library(scico)
 library(sf)
 library(GGally)
 library(deldir)
+library(ggnewscale)
 
 source("functions.R")
 
@@ -27,6 +28,7 @@ csr_clust_points <- readRDS("dat/csr_clust_points.rds")
 even_csr_gather <- even_csr_metrics %>% 
   gather(key, value, -repl, -adj)
 
+## Line plots of metrics vs. adj
 even_csr_comp <- ggplot() + 
   geom_path(data = even_csr_gather, 
     aes(x = adj, y = value, group = repl)) + 
@@ -34,6 +36,7 @@ even_csr_comp <- ggplot() +
   mytheme()
 ggsave(even_csr_comp, width = 5, height = 15, file = "img/even_csr_comp.png")
 
+## Pairwise plots
 even_csr_pairs <- ggpairs(even_csr_metrics,
   columns = c("cell_area_dev", "cell_area_cv", "pp_cv", "elong_cv", 
     "wi_mean", "wi_cv", "neighb_cv", "centre_gravity_cv"))
@@ -43,6 +46,7 @@ ggsave(even_csr_pairs, width = 10, height = 10, file = "img/even_csr_pairs.png")
 csr_clust_gather <- csr_clust_metrics %>% 
   gather(key, value, -repl, -adj)
 
+## Line plots of metrics vs. adj
 csr_clust_comp <- ggplot() + 
   geom_path(data = csr_clust_gather, 
     aes(x = adj, y = value, group = repl)) + 
@@ -50,6 +54,7 @@ csr_clust_comp <- ggplot() +
   mytheme()
 ggsave(csr_clust_comp, width = 5, height = 15, file = "img/csr_clust_comp.png")
 
+## Pairwise plots
 csr_clust_pairs <- ggpairs(csr_clust_metrics,
   columns = c("cell_area_dev", "cell_area_cv", "pp_cv", "elong_cv", 
     "wi_mean", "wi_cv", "neighb_cv", "centre_gravity_cv"))
@@ -99,6 +104,66 @@ cell_area_plot <- ggplot() +
 cell_vor_plot <- cell_area_plot + voronoi_maps + 
   plot_layout(ncol = 1, heights = c(2,1))
 ggsave(cell_vor_plot, width = 8, height = 6, file = "img/cell_vor_plot.png")
+
+# Investigate important transitions
+point_distrib_norm_anom_repl <- even_csr_metrics %>% 
+  filter(point_distrib_norm > 60) %>% 
+  pull(repl) %>%
+  unique()
+
+inf_point <- even_csr_metrics %>%
+  filter(repl == point_distrib_norm_anom_repl) %>% 
+  dplyr::select(adj, point_distrib_norm) %>% 
+  mutate(
+    val_lag = lag(point_distrib_norm),
+    lag_sum = point_distrib_norm - val_lag) %>% 
+  arrange(desc(abs(lag_sum))) %>% 
+  pull(adj) %>% 
+  head(1)
+inf_vec <- c(inf_point, inf_point+1)
+
+point_distrib_norm_anom_polys <- even_csr_polys[[point_distrib_norm_anom_repl]][inf_vec]
+point_distrib_norm_anom_points <- lapply(
+  even_csr_points[[point_distrib_norm_anom_repl]][inf_vec], function(x) { 
+    x$pt <- seq_len(nrow(x))
+    return(x)
+  })
+
+point_distrib_norm_anom_polys_sf <- lapply(
+  seq_along(point_distrib_norm_anom_polys), function(x) { 
+    out <- st_sf(st_sfc(lapply(point_distrib_norm_anom_polys[[x]], function(y) {
+      st_polygon(list(rbind(y, y[1,])))
+    })))
+    out$cell_area <- st_area(out)
+    out$adj <- inf_vec[x]
+    out$poly <- seq_len(nrow(out))
+    return(out)
+  })
+
+pt_move <- which(!unlist(lapply(seq_len(nrow(point_distrib_norm_anom_points[[1]])), function(x) {
+  all(point_distrib_norm_anom_points[[1]][x,] == point_distrib_norm_anom_points[[2]][x,])
+  })))
+
+point_distrib_norm_anom_points_move <- lapply(point_distrib_norm_anom_points, function(x) { 
+  x$move <- ifelse(x$pt == pt_move, TRUE, FALSE)
+  return(x)
+  })
+
+point_move_plot <- ggplot() + 
+  geom_sf(data = point_distrib_norm_anom_polys_sf[[1]], 
+    colour = "black", size = 2, fill = NA) + 
+  geom_sf(data = point_distrib_norm_anom_polys_sf[[2]], 
+    colour = "orange", fill = NA) + 
+  geom_point(data = point_distrib_norm_anom_points_move[[2]], 
+    aes(x = x, y = y, shape = move, fill = move), size = 4) +
+  geom_point(data = point_distrib_norm_anom_points_move[[1]], 
+    aes(x = x, y = y, shape = move, fill = move), size = 2) + 
+  scale_shape_manual(values = c(21,22)) + 
+  scale_fill_manual(values = c("lightgrey", "cyan3")) + 
+  theme_bw() + 
+  theme(legend.position = "none") + 
+  labs(x = "", y = "")
+ggsave(point_move_plot, width = 6, height = 6, file = "./img/point_move_plot.png")
 
 # Compare metrics in Bicuar 
 bicuar_pairs <- ggpairs(bicuar_metrics,
