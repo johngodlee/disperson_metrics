@@ -11,3 +11,5 @@
 * `frames.R` - generates images showing evolution of simlated data as points are moved
 * `functions.R` - contains miscellaneous functions
 * `animate.sh` - takes the images produced by `frames.R` and creates videos
+
+See [blog post](https://johngodlee.xyz/posts/2022-06-12-voronoi/)
